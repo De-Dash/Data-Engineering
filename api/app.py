@@ -6,7 +6,7 @@ from api import endpoints
 from api.config import get_logger
 
 
-# _logger = get_logger(logger_name=__name__)
+_logger = get_logger(logger_name=__name__)
 
 async def get_token_header(x_token: str=Header(...)):
     """
@@ -22,18 +22,23 @@ def create_app(*, config_object) -> FastAPI:
     """
     Creates a FastAPI app to be used
     """
+    _logger.info(f"[INFO]: Endpoint Version {api.__version__}")
+    _logger.info(f"[INFO]: config_object is {config_object}")
+    config = dict({"title": "De Dash API",
+                   "description": "Initial release of De Dash API",
+                   "version": api.__version__})
 
     app = FastAPI(title=config["title"],
-                  description=config["description"]
+                  description=config["description"],
                   version=config["version"])
 
-    """ Import endpoint API Routers are stored in endpoints.py """
+    # Import endpoint API Routers are stored in endpoints.py
     app.include_router(api.endpoints.router)
 
-    """ Fucking CORS """
+    # Fucking CORS
     app.add_middleware(
             CORSMiddleware,
-            allow_origin=["*"],
+            allow_origins=["*"],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"])
