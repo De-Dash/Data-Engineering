@@ -1,8 +1,11 @@
 import time
-from typing import List, Dict
+import string
+import re
 import nltk
+import html
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
+from typing import List, Dict
 from api.utils import fetch
 
 
@@ -27,7 +30,15 @@ class User:
 
     def _nltk2wn_tag(self, nltk_tag):
         """
+        Finds the WordNet tag for the word
+
         https://simonhessner.de/lemmatize-whole-sentences-with-python-and-nltks-wordnetlemmatizer/
+
+        Args: 
+            nltk_tag: tokenized words and tag pair
+
+        Returns: 
+            WordNet tag       
         """
         if nltk_tag.startswith('J'):
             return wordnet.ADJ
@@ -40,13 +51,44 @@ class User:
         else:					
             return None
 
-    def words(self) -> List[str]:
-        words = ' '.join([submitted['text'].lower() for submitted in self.submitted]).replace('\n', ' ')
-        words = self.lemmatizer.lemmatize(words)
-        words = [word for word in words if word not in stopwords.words('english')]
-        # words = nltk.pos_tag(nltk.tokenize.word_tokenize(words))
-        # words = map(lambda x: (x[0], self._nltk2wn_tag(x[1])), words)
+    def words(self) -> Dict:
+        """
+        Word frequency counts for all the text in user's comments, asks, jobs, and pools. Does not inclue
+        story titles. All the words will be lemmatized using NLTK's WordNet.
+
+        Args: 
+        
+        Returns: 
+            Python dictionary of word and word count.
+        """
+        # only take items with a text field
+        words = []
+        for post in self.submitted:
+            if 'text' in post:
+                words.append(post['text'])
+                
+        words = ' '.join(words).replace('\n', ' ').lower()
+        # removes urls
+        words = re.sub(r'http\S+', '', words)
+        # removes <> and content in betweens
+        words = re.sub('<.*?>', ' ', words)
+        # unescapes html entities, e.g., &#x2F into /
+        words = html.unescape(words)
+        
+        words = words.translate(str.maketrans(' ', ' ', string.punctuation))
+        tagged = nltk.pos_tag(nltk.tokenize.word_tokenize(words))
+        tagged = map(lambda x: (x[0], self._nltk2wn_tag(x[1])), tagged)
+        
+        # Process individual (word, tag) tuples
+        words_lemma = []
+        for word, tag in tagged:
+            if tag is None:
+                words_lemma.append(word)
+            else:
+                words_lemma.append(self.lemmatizer.lemmatize(word, tag))
+        words = [word for word in words_lemma if word not in stopwords.words('english')]
         words = nltk.FreqDist(words)
+        words = dict(words)
         return words
 
     def trending(self) -> List[str]:

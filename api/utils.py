@@ -9,9 +9,11 @@ def fetch(*, urls:List[str]) -> List[Dict]:
     Fetches request responses from a list of URLs asynchronously by calling
     _fetch_loop.
 
-    Args: urls, list of urls
+    Args: 
+        urls: list of urls
 
-    Returns: A list of dicts of url responses
+    Returns: 
+        A list of dicts of url responses
     """
     loop = asyncio.get_event_loop()
     responses = loop.run_until_complete(_fetch_loop(urls=urls))
@@ -22,9 +24,11 @@ async def _fetch_loop(*, urls:List[str]) -> List[Dict]:
     Calls _fetch_one using a list of urls asynchronously using up to 100 
     simultaneous calls
 
-    Args: urls, list of urls
+    Args: 
+        urls: list of urls
 
-    Returns: A list of dicts of url responses
+    Returns: 
+        A list of dicts of url responses
     """
     tasks = []
     
